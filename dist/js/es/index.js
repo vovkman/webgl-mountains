@@ -68,7 +68,7 @@ class UncompressedTextureLoader {
             image.onerror = () => reject("Cannot load image");
         });
     }
-    static async loadCubemap(url, gl) {
+    static async loadCubemap(url, gl, extension = "png") {
         const texture = gl.createTexture();
         if (texture === null) {
             throw new Error("Error creating WebGL texture");
@@ -79,18 +79,19 @@ class UncompressedTextureLoader {
         gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
         const promises = [
-            { type: gl.TEXTURE_CUBE_MAP_POSITIVE_X, suffix: "-posx.png" },
-            { type: gl.TEXTURE_CUBE_MAP_NEGATIVE_X, suffix: "-negx.png" },
-            { type: gl.TEXTURE_CUBE_MAP_POSITIVE_Y, suffix: "-posy.png" },
-            { type: gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, suffix: "-negy.png" },
-            { type: gl.TEXTURE_CUBE_MAP_POSITIVE_Z, suffix: "-posz.png" },
-            { type: gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, suffix: "-negz.png" }
+            { type: gl.TEXTURE_CUBE_MAP_POSITIVE_X, suffix: `-posx.${extension}` },
+            { type: gl.TEXTURE_CUBE_MAP_NEGATIVE_X, suffix: `-negx.${extension}` },
+            { type: gl.TEXTURE_CUBE_MAP_POSITIVE_Y, suffix: `-posy.${extension}` },
+            { type: gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, suffix: `-negy.${extension}` },
+            { type: gl.TEXTURE_CUBE_MAP_POSITIVE_Z, suffix: `-posz.${extension}` },
+            { type: gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, suffix: `-negz.${extension}` }
         ].map(face => new Promise((resolve, reject) => {
             const image = new Image();
             image.src = url + face.suffix;
             image.onload = () => {
                 gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
-                gl.texImage2D(face.type, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+                // gl.texImage2D(face.type, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+                gl.texImage2D(face.type, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
                 if (image && image.src) {
                     console.log(`Loaded texture ${url}${face.suffix} [${image.width}x${image.height}]`);
                 }
@@ -1436,6 +1437,19 @@ class BaseRenderer {
         return gl;
     }
     ;
+    /**
+     * Generates mipmasp for textures.
+     *
+     * @param textures Textures to generate mipmaps for.
+     */
+    generateMipmaps(...textures) {
+        for (const texture of textures) {
+            this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR_MIPMAP_LINEAR);
+            this.gl.generateMipmap(this.gl.TEXTURE_2D);
+        }
+    }
     /**
      * Initializes WebGL and calls all callbacks.
      *

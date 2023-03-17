@@ -54,9 +54,9 @@ body {
 .promo {
     opacity: 1;
     position: absolute;
-    bottom: 0;
     width: 100%;
-    text-align: right;
+    text-align: center !important;
+    padding-bottom: 50% !important;
     transition: opacity 1000ms cubic-bezier(0.645, 0.045, 0.355, 1);
 
     h3 {
